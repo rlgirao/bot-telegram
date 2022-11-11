@@ -1,0 +1,50 @@
+version: '3.3'
+
+services:
+  telegram-manager:
+    container_name: telegram-manager
+    build:
+      context: .
+      args:
+        project: telegram-manager
+      dockerfile: Dockerfile
+    ports:
+      - ${TELEGRAM_PORT}:${TELEGRAM_PORT}
+    depends_on:
+      - mongo
+    links:
+      - mongo
+    volumes:
+      - .:/opt/telegram-manager
+      - /opt/telegram-manager/node_modules
+    command: npm run start:dev
+    env_file:
+      - .env
+    networks:
+      - telegram
+  
+  mongo:
+    image: mongo
+    container_name: mongo
+    restart: always
+    ports:
+        - '27018:27017'
+    volumes:
+      - db_data:/usr/share/telegram-manager/mongodb/data
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    environment:
+      # MONGO_INITDB_DATABASE: ${MONGODB_DATABASE}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+      # MONGO_INITDB_USERNAME: ${MONGODB_USERNAME}
+      # MONGO_INITDB_PASSWORD: ${MONGODB_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE}
+    networks:
+      - telegram
+
+volumes:
+  db_data: {}
+
+networks:
+  telegram:
+    driver: bridge
